@@ -1,4 +1,7 @@
 import copy
+import itertools
+from collections import defaultdict
+
 import numpy as np
 import shapely.geometry as sg
 from shapely.ops import nearest_points
@@ -64,7 +67,7 @@ class House:
 
 
         # create sets
-        self.gt_trees = self.create_trees(self.positive_pairs)
+        self.gt_trees = self.create_trees(self.positive_pairs, gt=True)
         print(f'number of gt alignments: {len(self.gt_trees)} ...')
         for tree in tqdm(self.gt_trees, desc="generating GT alignments"):
             tree.fix_positions(self)
@@ -199,14 +202,60 @@ class House:
                         else:
                             self.pairs.append([[i, d1], [j, d2]])
 
-    def create_trees(self, pairs):
-        tree_array = []
-        tree = Tree()
-        self.DFS(None, tree, tree_array, pairs)
+    def make_adj_list(self):
+        adjacency_list = defaultdict(list)
+        with open('test_adjacency.txt', 'r') as f:
+            for line in f:
+                a, b = line.strip().split(' - ')
+                a = self.pano_names.index(a)
+                b = self.pano_names.index(b)
+                adjacency_list[a].append(b)
+                adjacency_list[b].append(a)
+        for room in adjacency_list:
+            for _ in range(len(self.panos[room].obj_list) - len(adjacency_list[room])):
+                adjacency_list[room].append(-1)
+        return adjacency_list
+
+    def create_trees(self, pairs, gt=False):
+        if gt:
+            tree_array = []
+            tree = Tree()
+            self.DFS(None, tree, tree_array, pairs)
+
+        else:
+            adjacency_list = self.make_adj_list()
+            res = self.DFS2(adjacency_list)
+            tree_array = [Tree() for _ in range(len(res))]
+            for i in range(len(res)):
+                for pair in res[i]:
+                    tree_array[i].add_pair([list(pair[0]), list(pair[1])], self)
+
         # if len(tree_array) > 0: # no need, just keep the len(self.positions)
         #     max_size_tree = max(tree_array, key=len)  # just keep maximum size trees
         #     tree_array = [x for x in tree_array if len(x) == max_size_tree]
         return tree_array
+
+    def DFS2(self, adjacency_list, cur_room=0, prev_pair=None):
+        cur_pairs_list = []
+
+        for rooms in itertools.permutations(adjacency_list[cur_room]):
+            permut_pairs_list = [[]]
+            if prev_pair is not None:
+                prev_room_ind = rooms.index(prev_pair[0])
+                cur_pair = (cur_room, prev_room_ind)
+                permut_pairs_list = [[(prev_pair, cur_pair)]]
+
+            for i, room in enumerate(rooms):
+                if room != -1 and (prev_pair is None or room != prev_pair[0]):
+                    subtree_pairs = self.DFS2(adjacency_list, room, (cur_room, i))
+                    new_cur_pairs_list = []
+                    for a, b in itertools.product(permut_pairs_list, subtree_pairs):
+                        new_cur_pairs_list.append(a + b)
+                    permut_pairs_list = new_cur_pairs_list
+
+            cur_pairs_list += permut_pairs_list
+
+        return cur_pairs_list
 
     def DFS(self, pindx, tree, tree_array, pairs):
         if pindx is not None:
@@ -216,11 +265,11 @@ class House:
         if len(tree) == len(self.pano_names):
             tree_array.append(copy.copy(tree))
 
-        def check_pair_once(y):
+        def door_is_used(y):
             for x in tree.pairs_list:
                 if (x[0] == y).all() or (x[1] == y).all():
-                    return False
-            return True
+                    return True
+            return False
 
         tmp_mark = []
         for i, pair in enumerate(pairs):
@@ -229,12 +278,12 @@ class House:
             if pair[0][0] in tree.rooms:
                 if pair[1][0] in tree.rooms:
                     continue
-                if not check_pair_once(np.array(pair[0])):
+                if door_is_used(np.array(pair[0])):
                     continue
             else:
                 if pair[1][0] not in tree.rooms and pindx is not None:
                     continue
-                elif not check_pair_once(np.array(pair[1])):
+                elif door_is_used(np.array(pair[1])):
                     continue
 
             self.pair_mark[i] = 1

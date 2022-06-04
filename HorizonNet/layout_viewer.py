@@ -82,11 +82,13 @@ if __name__ == '__main__':
     all_xyz = np.stack([xs, ys, zs], -1).reshape(-1, 3)
     all_rgb = equirect_texture.reshape(-1, 3)
     if args.ignore_ceiling:
-        mask = (~ceil_mask).reshape(-1)
-        all_xyz = all_xyz[mask]
-        all_rgb = all_rgb[mask]
+        mask1 = (~ceil_mask).reshape(-1)
+        all_xyz = all_xyz[mask1]
+        all_rgb = all_rgb[mask1]
     if args.ignore_floor:
         mask = (~floor_mask).reshape(-1)
+        if args.ignore_ceiling:
+            mask = mask[mask1]
         all_xyz = all_xyz[mask]
         all_rgb = all_rgb[mask]
     if args.ignore_wall:

@@ -193,9 +193,10 @@ def show_tree(house, tree, show_textures=False):
         pair = pair.copy()
         if i != 0:
             if pair[0][0] not in painted:
-                tmp = pair[0].copy()
-                pair[0] = pair[1]
-                pair[1] = tmp
+                # tmp = pair[0].copy()
+                # pair[0] = pair[1]
+                # pair[1] = tmp
+                pair[0], pair[1] = pair[1], pair[0]
         p1 = house.panos[pair[0][0]]
         p2 = house.panos[pair[1][0]]
         memo = memory[pair[0][0]]

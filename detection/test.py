@@ -63,6 +63,8 @@ def pred(aug, model, path):
         # features of the proposed boxes
         scores = torch.softmax(predictions[0][pred_inds], 1).data.cpu().numpy()
         outputs = pred_instances[0]
+        outputs = remove_bad_boxes_from_model_output(outputs)
+        scores = remove_bad_boxes_from_model_scores(scores)
 
         ######
         path = path.replace('images','detection_preds')
@@ -74,6 +76,23 @@ def pred(aug, model, path):
             v = Visualizer(org_im[:, :, ::-1], scale=1.0)
             out = v.draw_instance_predictions(outputs["instances"].to("cpu"))
             cv2.imwrite(f'{path}/{name}', out.get_image()[:, :, ::-1])
+
+
+def remove_bad_boxes_from_model_output(outputs):
+    # bad boxes are 2, 3, 4
+    # 2 = kitchen counter
+    # 3 = frame
+    # 4 = window
+    instances = outputs['instances']
+    good_detections = instances[(instances.pred_classes != 2)
+                                & (instances.pred_classes != 3)
+                                & (instances.pred_classes != 4)]
+    return {'instances': good_detections}
+
+
+def remove_bad_boxes_from_model_scores(scores):
+    return np.array([score for score in scores if score[:-1].argmax() not in {2, 3, 4}])
+
 
 if __name__ == "__main__":
     parser = config_parser()

@@ -147,7 +147,7 @@ class Tree:
                     self.fix_positions(house, index+1, tmp_pos.copy(), polys.copy(), poly_types.copy(), offset_t)
                     polys = polys[:-1]
 
-    def check_type_conditions(self, house):
+    def check_type_conditions(self, house) -> bool:
         for pair in self.pairs_list:
             p1 = house.panos[pair[0][0]]
             d1 = p1.obj_list[pair[0][1]]
