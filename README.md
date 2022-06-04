@@ -1,15 +1,16 @@
 # Extreme Structure from Motion for Indoor Panoramas without Visual Overlaps
-Code and instructions for our paper: Extreme Structure from Motion for Indoor Panoramas without Visual Overlaps, ICCV 2021.
-<img src='figs/teaser.jpg' width=100%>
-## Installation
-First, clone our repo and install the requirements:
-```
-git clone https://github.com/aminshabani/extreme-indoor-sfm.git
-cd extreme-indoor-sfm
-pip install -r requirements.txt
-```
-The cose is based on pytorch and use [Detectron2](https://github.com/facebookresearch/detectron2) for door/window detection, and [HorizonNet](https://github.com/sunset1995/HorizonNet) for layout estimation.
+This is a modified version of ["Extreme Structure from Motion for Indoor Panoramas without Visual Overlaps"](https://github.com/aminshabani/extreme-indoor-sfm). 
+The code is based on pytorch and uses [Detectron2](https://github.com/facebookresearch/detectron2) for door/window detection, and [HorizonNet](https://github.com/sunset1995/HorizonNet) for layout estimation.
 
+## Modifications
+The modification assumes that the **adjacency relation** for rooms is known. This allows to reduce the number of room to room combinations, so that we only shuffle door labels within every room.
+Adjacency relation needs to be written in the file `test_adjacency.txt` in the following format:
+```
+1 - 2
+2 - 3
+2 - 4
+```
+In this example, room 1 is connected to room 2, and room 2 is connected to rooms 3 and 4 (numbers denote the corresponding panoramas in `dataset` folder).
 ## Dataset
 First, preprocess the panorama images of each house to be aligned with the Manhattan World. You can use the same [script](https://github.com/sunset1995/HorizonNet#1-pre-processing-align-camera-rotation-pose) as previous methods on layout estimation.
 create a new  `dataset`  directory including a folder for each house and move the corrosponding panorama images to that folder.
@@ -60,16 +61,4 @@ extreme-indoor-sfm
 |   |   └── floorplan.jpg
 └── ...
 └── output
-```
-## Citation
-```
-@InProceedings{Shabani_2021_ICCV,
-author = {Shabani, Mohammad Amin and Song, Weilian and 
-        Odamaki, Makoto and Fujiki, Hirochika and Furukawa, Yasutaka},
-title = {Extreme Structure from Motion for Indoor Panoramas without Visual Overlaps},
-booktitle = {Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV)},
-month = {October},
-year = {2021},
-url = {https://aminshabani.github.io/publications/extreme_sfm/pdfs/iccv2021_2088.pdf}
-}
 ```
